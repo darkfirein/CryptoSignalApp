@@ -1,14 +1,16 @@
 """
 ai_analysis.py
-Sends pre-calculated indicator data (never raw guessing) to Claude for
-human-like reasoning, confidence scoring, and a risk note.
+Sends pre-calculated indicator data (never raw guessing) to Google Gemini
+(free tier - no credit card needed) for human-like reasoning, confidence
+scoring, and a risk note.
 """
 
 import os
 import json
-import anthropic
+import google.generativeai as genai
 
-client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+model = genai.GenerativeModel("gemini-3.6-flash")
 
 
 def get_ai_analysis(indicator_data: dict, recent_news: str = "No recent news available") -> dict:
@@ -37,13 +39,15 @@ Respond ONLY with valid JSON, no markdown fences, no extra text:
   "risk_note": "short specific risk warning for this coin's current situation"
 }}"""
 
-    response = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=400,
-        messages=[{"role": "user", "content": prompt}]
+    response = model.generate_content(
+        prompt,
+        generation_config=genai.types.GenerationConfig(
+            temperature=0.3,
+            max_output_tokens=400,
+        ),
     )
 
-    raw_text = response.content[0].text.strip()
+    raw_text = response.text.strip()
     raw_text = raw_text.replace("```json", "").replace("```", "").strip()
 
     try:
