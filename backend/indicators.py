@@ -1,11 +1,14 @@
 """
 indicators.py
-Fetches candlestick data from Binance and calculates technical indicators.
+Fetches candlestick data from Binance and calculates technical indicators
+using the 'ta' library (actively maintained, unlike pandas-ta).
 No API key needed for public market data (klines).
 """
 
 import pandas as pd
-import pandas_ta as ta
+from ta.momentum import RSIIndicator
+from ta.trend import EMAIndicator, MACD
+from ta.volatility import BollingerBands
 from binance.client import Client
 
 # Public client - no keys needed for market data endpoints
@@ -14,7 +17,7 @@ client = Client()
 
 def fetch_indicator_data(symbol: str, interval: str = "4h", limit: int = 200) -> dict:
     """
-    Fetch candles for `symbol` and return latest indicator snapshot + raw df.
+    Fetch candles for `symbol` and return latest indicator snapshot.
     Returns None if the symbol is invalid or has no data.
     """
     try:
@@ -33,17 +36,17 @@ def fetch_indicator_data(symbol: str, interval: str = "4h", limit: int = 200) ->
     for col in ["open", "high", "low", "close", "volume"]:
         df[col] = df[col].astype(float)
 
-    df["rsi"] = ta.rsi(df["close"], length=14)
-    df["ema50"] = ta.ema(df["close"], length=50)
-    df["ema200"] = ta.ema(df["close"], length=200)
+    df["rsi"] = RSIIndicator(close=df["close"], window=14).rsi()
+    df["ema50"] = EMAIndicator(close=df["close"], window=50).ema_indicator()
+    df["ema200"] = EMAIndicator(close=df["close"], window=200).ema_indicator()
 
-    macd = ta.macd(df["close"])
-    df["macd"] = macd["MACD_12_26_9"]
-    df["macd_signal"] = macd["MACDs_12_26_9"]
+    macd_calc = MACD(close=df["close"])
+    df["macd"] = macd_calc.macd()
+    df["macd_signal"] = macd_calc.macd_signal()
 
-    bbands = ta.bbands(df["close"], length=20)
-    df["bb_lower"] = bbands["BBL_20_2.0"]
-    df["bb_upper"] = bbands["BBU_20_2.0"]
+    bb = BollingerBands(close=df["close"], window=20, window_dev=2)
+    df["bb_lower"] = bb.bollinger_lband()
+    df["bb_upper"] = bb.bollinger_hband()
 
     latest = df.iloc[-1]
 
