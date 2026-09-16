@@ -11,8 +11,13 @@ from ta.trend import EMAIndicator, MACD
 from ta.volatility import BollingerBands
 from binance.client import Client
 
-# Public client - no keys needed for market data endpoints
+# Public client - no keys needed for market data endpoints.
+# Point at Binance's public data mirror (data-api.binance.vision) instead of
+# binance.com directly - binance.com blocks requests from US-hosted IPs
+# (which is what GitHub Actions runners use), but this mirror serves the
+# same public market data without that restriction.
 client = Client()
+client.API_URL = "https://data-api.binance.vision/api"
 
 
 def fetch_indicator_data(symbol: str, interval: str = "4h", limit: int = 200) -> dict:
