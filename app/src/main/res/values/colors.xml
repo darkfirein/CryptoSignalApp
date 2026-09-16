@@ -1,0 +1,9 @@
+<resources>
+    <color name="background_dark">#0D0D1A</color>
+    <color name="surface_dark">#1A1A2E</color>
+    <color name="gold_accent">#F0B90B</color>
+    <color name="buy_green">#00C853</color>
+    <color name="sell_red">#D32F2F</color>
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#A0A0B8</color>
+</resources>
