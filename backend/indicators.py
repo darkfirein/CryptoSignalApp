@@ -1,23 +1,23 @@
 """
 indicators.py
-Fetches candlestick data from Binance and calculates technical indicators
-using the 'ta' library (actively maintained, unlike pandas-ta).
-No API key needed for public market data (klines).
+Fetches candlestick data directly from Binance's public data mirror
+(data-api.binance.vision) using plain HTTP requests, and calculates
+technical indicators with the 'ta' library.
+
+We use plain `requests` instead of the python-binance package here because
+that package's Client() pings binance.com on init, and binance.com blocks
+requests from US-hosted IPs (which is what GitHub Actions runners use).
+data-api.binance.vision serves the same public market data without that
+restriction, and calling it directly avoids the problematic ping.
 """
 
+import requests
 import pandas as pd
 from ta.momentum import RSIIndicator
 from ta.trend import EMAIndicator, MACD
 from ta.volatility import BollingerBands
-from binance.client import Client
 
-# Public client - no keys needed for market data endpoints.
-# Point at Binance's public data mirror (data-api.binance.vision) instead of
-# binance.com directly - binance.com blocks requests from US-hosted IPs
-# (which is what GitHub Actions runners use), but this mirror serves the
-# same public market data without that restriction.
-client = Client()
-client.API_URL = "https://data-api.binance.vision/api"
+BASE_URL = "https://data-api.binance.vision/api/v3/klines"
 
 
 def fetch_indicator_data(symbol: str, interval: str = "4h", limit: int = 200) -> dict:
@@ -26,12 +26,18 @@ def fetch_indicator_data(symbol: str, interval: str = "4h", limit: int = 200) ->
     Returns None if the symbol is invalid or has no data.
     """
     try:
-        klines = client.get_klines(symbol=symbol, interval=interval, limit=limit)
+        response = requests.get(
+            BASE_URL,
+            params={"symbol": symbol, "interval": interval, "limit": limit},
+            timeout=15,
+        )
+        response.raise_for_status()
+        klines = response.json()
     except Exception as e:
         print(f"[indicators] Failed to fetch {symbol}: {e}")
         return None
 
-    if not klines:
+    if not klines or not isinstance(klines, list):
         return None
 
     df = pd.DataFrame(klines, columns=[
