@@ -20,6 +20,7 @@ import com.darkfirein.cryptosignal.data.model.Candle
 import com.darkfirein.cryptosignal.data.model.Signal
 import com.darkfirein.cryptosignal.data.model.Ticker24hr
 import com.darkfirein.cryptosignal.data.model.WatchlistCoin
+import com.darkfirein.cryptosignal.data.repository.AnalysisRepository
 import com.darkfirein.cryptosignal.data.repository.MarketRepository
 import com.darkfirein.cryptosignal.data.repository.SignalRepository
 import com.darkfirein.cryptosignal.ui.screens.ChartScreen
@@ -74,6 +75,7 @@ fun AppRoot() {
     }
     val signalRepository = remember { SignalRepository(uid) }
     val marketRepository = remember { MarketRepository() }
+    val analysisRepository = remember { AnalysisRepository() }
     val scope = rememberCoroutineScope()
 
     var watchlist by remember { mutableStateOf<List<WatchlistCoin>>(emptyList()) }
@@ -81,6 +83,7 @@ fun AppRoot() {
     var allTickers by remember { mutableStateOf<List<Ticker24hr>>(emptyList()) }
     var candles by remember { mutableStateOf<List<Candle>>(emptyList()) }
     var chartInterval by remember { mutableStateOf("1h") }
+    var pendingAnalysis by remember { mutableStateOf<Set<String>>(emptySet()) }
 
     var currentScreen by remember { mutableStateOf<Screen>(Screen.Signals) }
 
@@ -167,7 +170,21 @@ fun AppRoot() {
                         watchlist = watchlist,
                         signals = signals,
                         availableCoins = allTickers,
-                        onAddCoin = { symbol -> scope.launch { signalRepository.addCoin(symbol) } },
+                        pendingAnalysis = pendingAnalysis,
+                        onAddCoin = { symbol ->
+                            scope.launch {
+                                signalRepository.addCoin(symbol)
+                                pendingAnalysis = pendingAnalysis + symbol
+                                try {
+                                    val result = analysisRepository.analyzeSymbol(symbol)
+                                    signalRepository.saveSignal(result)
+                                } catch (e: Exception) {
+                                    // Backend cron will still pick this coin up on its next cycle
+                                } finally {
+                                    pendingAnalysis = pendingAnalysis - symbol
+                                }
+                            }
+                        },
                         onRemoveCoin = { symbol -> scope.launch { signalRepository.removeCoin(symbol) } }
                     )
                 }

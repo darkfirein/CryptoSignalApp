@@ -61,4 +61,11 @@ class SignalRepository(private val userId: String) {
             .set(mapOf("fcmToken" to token), com.google.firebase.firestore.SetOptions.merge())
             .await()
     }
+
+    /** Writes an instantly-computed signal straight to Firestore so it shows up immediately. */
+    suspend fun saveSignal(signal: Signal) {
+        db.collection("signals").document(signal.symbol)
+            .set(signal)
+            .await()
+    }
 }

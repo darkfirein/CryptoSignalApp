@@ -28,6 +28,7 @@ fun HomeScreen(
     watchlist: List<WatchlistCoin>,
     signals: List<Signal>,
     availableCoins: List<Ticker24hr>,
+    pendingAnalysis: Set<String>,
     onAddCoin: (String) -> Unit,
     onRemoveCoin: (String) -> Unit
 ) {
@@ -93,7 +94,7 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(12.dp))
         }
 
-        if (signals.isEmpty()) {
+        if (signals.isEmpty() && pendingAnalysis.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
                     text = if (watchlist.isEmpty())
@@ -106,7 +107,10 @@ fun HomeScreen(
             }
         } else {
             LazyColumn {
-                items(signals) { signal ->
+                items(pendingAnalysis.toList(), key = { "pending_$it" }) { symbol ->
+                    AnalyzingCard(symbol = symbol)
+                }
+                items(signals.filter { it.symbol !in pendingAnalysis }) { signal ->
                     SignalCard(signal = signal)
                 }
                 item { Spacer(modifier = Modifier.height(24.dp)) }
@@ -124,6 +128,31 @@ fun HomeScreen(
             },
             onDismiss = { showPicker = false }
         )
+    }
+}
+
+@Composable
+private fun AnalyzingCard(symbol: String) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        colors = CardDefaults.cardColors(containerColor = SurfaceDark),
+        shape = RoundedCornerShape(18.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(18.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CircularProgressIndicator(color = GoldAccent, modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+            Spacer(modifier = Modifier.width(12.dp))
+            Column {
+                Text(text = symbol, color = TextPrimary, fontWeight = FontWeight.SemiBold, fontSize = 15.sp)
+                Text(text = "Analyzing now\u2026", color = TextSecondary, fontSize = 12.sp)
+            }
+        }
     }
 }
 
