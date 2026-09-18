@@ -166,6 +166,7 @@ fun AppRoot() {
                     HomeScreen(
                         watchlist = watchlist,
                         signals = signals,
+                        availableCoins = allTickers,
                         onAddCoin = { symbol -> scope.launch { signalRepository.addCoin(symbol) } },
                         onRemoveCoin = { symbol -> scope.launch { signalRepository.removeCoin(symbol) } }
                     )

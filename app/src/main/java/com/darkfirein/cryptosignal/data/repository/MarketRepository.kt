@@ -38,7 +38,7 @@ class MarketRepository {
     }
 
     /** Emits live candles for one symbol every [intervalMs] - powers the chart screen. */
-    fun observeCandles(symbol: String, interval: String = "1h", intervalMs: Long = 5000): Flow<List<Candle>> = flow {
+    fun observeCandles(symbol: String, interval: String = "1h", intervalMs: Long = 3000): Flow<List<Candle>> = flow {
         while (true) {
             try {
                 val raw = api.getKlines(symbol = symbol, interval = interval, limit = 100)

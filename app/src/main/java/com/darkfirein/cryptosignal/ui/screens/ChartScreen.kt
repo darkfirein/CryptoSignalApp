@@ -3,7 +3,9 @@ package com.darkfirein.cryptosignal.ui.screens
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -25,7 +27,7 @@ import com.darkfirein.cryptosignal.ui.theme.*
 import java.text.DecimalFormat
 
 private val priceFormat = DecimalFormat("#,##0.00######")
-private val intervals = listOf("15m", "1h", "4h", "1d")
+private val intervals = listOf("1s", "1m", "5m", "15m", "1h", "4h", "1d")
 
 @Composable
 fun ChartScreen(
@@ -71,7 +73,10 @@ fun ChartScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             intervals.forEach { interval ->
